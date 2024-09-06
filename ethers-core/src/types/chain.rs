@@ -10,6 +10,8 @@ use strum::{AsRefStr, EnumCount, EnumIter, EnumString, EnumVariantNames};
 // compatibility re-export
 #[doc(hidden)]
 pub use num_enum::{TryFromPrimitive, TryFromPrimitiveError};
+use crate::types::Chain::{BinanceSmartChain, BinanceSmartChainTestnet};
+
 #[doc(hidden)]
 pub type ParseChainError = TryFromPrimitiveError<Chain>;
 
@@ -347,8 +349,6 @@ impl Chain {
             OptimismKovan |
             Fantom |
             FantomTestnet |
-            BinanceSmartChain |
-            BinanceSmartChainTestnet |
             ArbitrumTestnet |
             Rsk |
             Oasis |
@@ -373,6 +373,8 @@ impl Chain {
             Goerli |
             Sepolia |
             Holesky |
+            BinanceSmartChain |
+            BinanceSmartChainTestnet |
             Base |
             BaseGoerli |
             Optimism |
