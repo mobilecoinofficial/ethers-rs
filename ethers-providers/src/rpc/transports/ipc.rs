@@ -4,7 +4,7 @@ use bytes::{Buf, BytesMut};
 use ethers_core::types::U256;
 use futures_channel::mpsc;
 use futures_util::stream::StreamExt;
-use hashers::fx_hash::FxHasher64;
+use rustc_hash::FxHasher;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{value::RawValue, Deserializer};
 use std::{
@@ -29,7 +29,7 @@ use tokio::{
 use super::common::{JsonRpcError, Request, Response};
 use crate::{errors::ProviderError, JsonRpcClient, PubsubClient};
 
-type FxHashMap<K, V> = std::collections::HashMap<K, V, BuildHasherDefault<FxHasher64>>;
+type FxHashMap<K, V> = std::collections::HashMap<K, V, BuildHasherDefault<FxHasher>>;
 
 type Pending = oneshot::Sender<Result<Box<RawValue>, JsonRpcError>>;
 type Subscription = mpsc::UnboundedSender<Box<RawValue>>;
@@ -351,7 +351,7 @@ impl Shared {
             let read = reader.read_buf(&mut buf).await?;
             if read == 0 {
                 // eof, socket was closed
-                return Err(IpcError::ServerExit)
+                return Err(IpcError::ServerExit);
             }
 
             // parse the received bytes into 0-n jsonrpc messages
@@ -427,7 +427,7 @@ impl Shared {
             Some(tx) => tx,
             None => {
                 tracing::warn!(%id, "no pending request exists for the response ID");
-                return
+                return;
             }
         };
 
@@ -448,7 +448,7 @@ impl Shared {
                     id = ?params.subscription,
                     "no subscription exists for the notification ID"
                 );
-                return
+                return;
             }
         };
 

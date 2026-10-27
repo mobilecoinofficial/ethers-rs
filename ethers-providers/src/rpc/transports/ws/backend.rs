@@ -98,12 +98,12 @@ impl WsBackend {
                 trace!(%item, "Deserialized message");
                 let res = self.handler.unbounded_send(item);
                 if res.is_err() {
-                    return Err(WsClientError::DeadChannel)
+                    return Err(WsClientError::DeadChannel);
                 }
             }
             Err(e) => {
                 error!(e = %e, "Failed to deserialize message");
-                return Err(WsClientError::JsonError(e))
+                return Err(WsClientError::JsonError(e));
             }
         }
         Ok(())
@@ -113,13 +113,13 @@ impl WsBackend {
     async fn handle(&mut self, item: WsStreamItem) -> Result<(), WsClientError> {
         match item {
             Ok(item) => match item {
-                Message::Text(t) => self.handle_text(t).await,
+                Message::Text(t) => self.handle_text(t.to_string()).await,
                 // https://github.com/snapview/tungstenite-rs/blob/42b8797e8b7f39efb7d9322dc8af3e9089db4f7d/src/protocol/mod.rs#L172-L175
                 Message::Ping(_) => Ok(()),
                 Message::Pong(_) => Ok(()),
                 Message::Frame(_) => Ok(()),
 
-                Message::Binary(buf) => Err(WsClientError::UnexpectedBinary(buf)),
+                Message::Binary(buf) => Err(WsClientError::UnexpectedBinary(buf.to_vec())),
                 Message::Close(frame) => {
                     if frame.is_some() {
                         error!("Close frame: {}", frame.unwrap());
@@ -138,7 +138,7 @@ impl WsBackend {
     async fn handle(&mut self, item: WsStreamItem) -> Result<(), WsClientError> {
         match item {
             Message::Text(inner) => self.handle_text(inner).await,
-            Message::Binary(buf) => Err(WsClientError::UnexpectedBinary(buf)),
+            Message::Binary(buf) => Err(WsClientError::UnexpectedBinary(buf.to_vec())),
         }
     }
 
@@ -158,7 +158,7 @@ impl WsBackend {
                 select! {
                     _ = keepalive => {
                         #[cfg(not(target_arch = "wasm32"))]
-                        if let Err(e) = self.server.send(Message::Ping(vec![])).await {
+                        if let Err(e) = self.server.send(Message::Ping(Default::default())).await {
                             error!(err = %e, "WS connection error");
                             err = true;
                             break
@@ -184,7 +184,7 @@ impl WsBackend {
                     inst = self.to_dispatch.next() => {
                         match inst {
                             Some(msg) => {
-                                if let Err(e) = self.server.send(Message::Text(msg.to_string())).await {
+                                if let Err(e) = self.server.send(Message::Text(msg.to_string().into())).await {
                                     error!(err = %e, "WS connection error");
                                     err = true;
                                     break

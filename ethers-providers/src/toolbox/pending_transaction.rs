@@ -6,7 +6,6 @@ use ethers_core::types::{Transaction, TransactionReceipt, TxHash, U64};
 use futures_core::stream::Stream;
 use futures_timer::Delay;
 use futures_util::stream::StreamExt;
-use instant::Duration;
 use pin_project::pin_project;
 use std::{
     fmt,
@@ -15,6 +14,7 @@ use std::{
     pin::Pin,
     task::{Context, Poll},
 };
+use web_time::Duration;
 
 /// A pending transaction is a transaction which has been submitted but is not yet mined.
 /// `await`'ing on a pending transaction will resolve to a transaction receipt
@@ -183,7 +183,7 @@ impl<'a, P: JsonRpcClient> Future for PendingTransaction<'a, P> {
                     if *this.retries_remaining == 0 {
                         tracing::debug!("Dropped from mempool, pending tx {:?}", *this.tx_hash);
                         *this.state = PendingTxState::Completed;
-                        return Poll::Ready(Ok(None))
+                        return Poll::Ready(Ok(None));
                     }
 
                     *this.retries_remaining -= 1;
@@ -242,7 +242,7 @@ impl<'a, P: JsonRpcClient> Future for PendingTransaction<'a, P> {
                 } else {
                     let receipt = receipt.take();
                     *this.state = PendingTxState::Completed;
-                    return Poll::Ready(Ok(receipt))
+                    return Poll::Ready(Ok(receipt));
                 }
             }
             PendingTxState::PausedGettingBlockNumber(receipt) => {
@@ -273,7 +273,7 @@ impl<'a, P: JsonRpcClient> Future for PendingTransaction<'a, P> {
                 if current_block > inclusion_block + *this.confirmations - 1 {
                     let receipt = Some(receipt);
                     *this.state = PendingTxState::Completed;
-                    return Poll::Ready(Ok(receipt))
+                    return Poll::Ready(Ok(receipt));
                 } else {
                     tracing::trace!(tx_hash = ?this.tx_hash, "confirmations {}/{}", current_block - inclusion_block + 1, this.confirmations);
                     *this.state = PendingTxState::PausedGettingBlockNumber(Some(receipt));

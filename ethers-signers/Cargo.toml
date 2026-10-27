@@ -26,8 +26,8 @@ all-features = true
 ethers-core.workspace = true
 
 # crypto
-coins-bip32 = "0.8.3"
-coins-bip39 = "0.8.6"
+coins-bip32 = "0.17"
+coins-bip39 = "0.17"
 elliptic-curve.workspace = true
 sha2.workspace = true
 rand.workspace = true

@@ -1,5 +1,6 @@
 //! Specific helper functions for creating/loading a mnemonic private key following BIP-39
 //! specifications
+use super::private_key::RngCompat;
 use crate::{Wallet, WalletError};
 
 use coins_bip32::path::DerivationPath;
@@ -9,7 +10,7 @@ use ethers_core::{
     types::PathOrString,
     utils::{secret_key_to_address, to_checksum},
 };
-use rand::Rng;
+use rand::{CryptoRng, Rng};
 use std::{fs::File, io::Write, marker::PhantomData, path::PathBuf, str::FromStr};
 use thiserror::Error;
 
@@ -158,9 +159,12 @@ impl<W: Wordlist> MnemonicBuilder<W> {
 
     /// Builds a `LocalWallet` using the parameters set in the mnemonic builder and constructing
     /// the phrase using the provided random number generator.
-    pub fn build_random<R: Rng>(&self, rng: &mut R) -> Result<Wallet<SigningKey>, WalletError> {
+    pub fn build_random<R: Rng + CryptoRng>(
+        &self,
+        rng: &mut R,
+    ) -> Result<Wallet<SigningKey>, WalletError> {
         let mnemonic = match &self.phrase {
-            None => Mnemonic::<W>::new_with_count(rng, self.word_count)?,
+            None => Mnemonic::<W>::random(self.word_count.try_into()?, &mut RngCompat(rng)),
             _ => return Err(MnemonicBuilderError::UnexpectedPhraseFound.into()),
         };
         let wallet = self.mnemonic_to_wallet(&mnemonic)?;

@@ -37,7 +37,7 @@ pub use rlp;
 pub use hex;
 
 use crate::types::{Address, Bytes, ParseI256Error, H256, I256, U256};
-use elliptic_curve::sec1::ToEncodedPoint;
+use elliptic_curve::sec1::ToSec1Point;
 use ethabi::ethereum_types::FromDecStrErr;
 use k256::{
     ecdsa::{SigningKey, VerifyingKey},
@@ -416,7 +416,7 @@ pub fn raw_public_key_to_address<T: AsRef<[u8]>>(pubkey: T) -> Address {
 /// address
 pub fn public_key_to_address(pubkey: &VerifyingKey) -> Address {
     let affine: &AffinePoint = pubkey.as_ref();
-    let encoded = affine.to_encoded_point(false);
+    let encoded = affine.to_sec1_point(false);
     raw_public_key_to_address(&encoded.as_bytes()[1..])
 }
 
@@ -477,7 +477,7 @@ pub fn parse_checksummed(addr: &str, chain_id: Option<u8>) -> Result<Address, Co
 pub fn format_bytes32_string(text: &str) -> Result<[u8; 32], ConversionError> {
     let str_bytes: &[u8] = text.as_bytes();
     if str_bytes.len() > 32 {
-        return Err(ConversionError::TextTooLong)
+        return Err(ConversionError::TextTooLong);
     }
 
     let mut bytes32: [u8; 32] = [0u8; 32];
@@ -523,7 +523,7 @@ where
     D: Deserializer<'de>,
 {
     if bytes.0.len() > 32 {
-        return Err(serde::de::Error::custom("input too long to be a H256"))
+        return Err(serde::de::Error::custom("input too long to be a H256"));
     }
 
     // left pad with zeros to 32 bytes
@@ -561,10 +561,10 @@ fn estimate_priority_fee(rewards: Vec<Vec<U256>>) -> U256 {
     let mut rewards: Vec<U256> =
         rewards.iter().map(|r| r[0]).filter(|r| *r > U256::zero()).collect();
     if rewards.is_empty() {
-        return U256::zero()
+        return U256::zero();
     }
     if rewards.len() == 1 {
-        return rewards[0]
+        return rewards[0];
     }
     // Sort the rewards as we will eventually take the median.
     rewards.sort();

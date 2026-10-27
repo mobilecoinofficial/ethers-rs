@@ -666,7 +666,7 @@ mod tests {
     #[test]
     fn clique_correctly_configured() {
         run_with_tempdir(|temp_dir_path| {
-            let private_key = SigningKey::random(&mut rand::thread_rng());
+            let private_key = SigningKey::from_slice(&[1u8; 32]).unwrap();
             let geth = Geth::new()
                 .set_clique_private_key(private_key)
                 .chain_id(1337u64)

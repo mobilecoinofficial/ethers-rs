@@ -37,7 +37,7 @@ futures-locks.workspace = true
 futures-channel.workspace = true
 tracing.workspace = true
 tracing-futures.workspace = true
-instant.workspace = true
+web-time.workspace = true
 
 # for gas oracles
 reqwest.workspace = true
@@ -67,5 +67,5 @@ default = ["rustls", "etherscan"]
 celo = ["ethers-core/celo", "ethers-providers/celo", "ethers-signers/celo", "ethers-contract/celo"]
 etherscan = ["dep:ethers-etherscan"]
 optimism = ["ethers-core/optimism", "ethers-providers/optimism", "ethers-contract/optimism"]
-rustls = ["reqwest/rustls-tls"]
+rustls = ["reqwest/rustls"]
 openssl = ["reqwest/native-tls"]
