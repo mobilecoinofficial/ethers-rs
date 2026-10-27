@@ -2,8 +2,8 @@ use super::{GasOracle, Result};
 use async_trait::async_trait;
 use ethers_core::types::U256;
 use futures_locks::RwLock;
-use instant::{Duration, Instant};
 use std::{fmt::Debug, future::Future};
+use web_time::{Duration, Instant};
 
 #[derive(Debug)]
 pub struct Cache<T: GasOracle> {
@@ -45,7 +45,7 @@ impl<T: Clone> Cached<T> {
             let lock = self.0.read().await;
             if let Some((last_fetch, value)) = lock.as_ref() {
                 if Instant::now().duration_since(*last_fetch) < validity {
-                    return Ok(value.clone())
+                    return Ok(value.clone());
                 }
             }
         }
@@ -55,7 +55,7 @@ impl<T: Clone> Cached<T> {
             // Check again, a concurrent thread may have raced us to the write.
             if let Some((last_fetch, value)) = lock.as_ref() {
                 if Instant::now().duration_since(*last_fetch) < validity {
-                    return Ok(value.clone())
+                    return Ok(value.clone());
                 }
             }
             // Set a fresh value

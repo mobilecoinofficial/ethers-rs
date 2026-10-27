@@ -3,8 +3,7 @@ use crate::{
     types::{Address, H256, U256},
     utils::hash_message,
 };
-use elliptic_curve::{consts::U32, sec1::ToEncodedPoint};
-use generic_array::GenericArray;
+use elliptic_curve::sec1::ToSec1Point;
 use k256::{
     ecdsa::{
         Error as K256SignatureError, RecoveryId, Signature as RecoverableSignature,
@@ -78,7 +77,7 @@ impl Signature {
         let address = address.into();
         let recovered = self.recover(message)?;
         if recovered != address {
-            return Err(SignatureError::VerificationError(address, recovered))
+            return Err(SignatureError::VerificationError(address, recovered));
         }
 
         Ok(())
@@ -105,7 +104,7 @@ impl Signature {
         )?;
 
         let public_key = K256PublicKey::from(&verifying_key);
-        let public_key = public_key.to_encoded_point(/* compress = */ false);
+        let public_key = public_key.to_sec1_point(/* compress = */ false);
         let public_key = public_key.as_bytes();
         debug_assert_eq!(public_key[0], 0x04);
         let hash = crate::utils::keccak256(&public_key[1..]);
@@ -133,15 +132,14 @@ impl Signature {
             let mut s_bytes = [0u8; 32];
             self.r.to_big_endian(&mut r_bytes);
             self.s.to_big_endian(&mut s_bytes);
-            let gar: &GenericArray<u8, U32> = GenericArray::from_slice(&r_bytes);
-            let gas: &GenericArray<u8, U32> = GenericArray::from_slice(&s_bytes);
-            K256Signature::from_scalars(*gar, *gas)?
+            K256Signature::from_scalars(r_bytes, s_bytes)?
         };
 
         // Normalize into "low S" form. See:
         // - https://github.com/RustCrypto/elliptic-curves/issues/988
         // - https://github.com/bluealloy/revm/pull/870
-        if let Some(normalized) = signature.normalize_s() {
+        let normalized = signature.normalize_s();
+        if normalized != signature {
             signature = normalized;
             recovery_id = RecoveryId::from_byte(recovery_id.to_byte() ^ 1).unwrap();
         }
@@ -218,7 +216,7 @@ impl<'a> TryFrom<&'a [u8]> for Signature {
     /// and the final byte is the `v` value in 'Electrum' notation.
     fn try_from(bytes: &'a [u8]) -> Result<Self, Self::Error> {
         if bytes.len() != 65 {
-            return Err(SignatureError::InvalidLength(bytes.len()))
+            return Err(SignatureError::InvalidLength(bytes.len()));
         }
 
         let v = bytes[64];

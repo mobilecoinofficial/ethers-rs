@@ -48,7 +48,7 @@ tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [features]
 default = ["rustls"]
-rustls = ["reqwest/rustls-tls"]
+rustls = ["reqwest/rustls"]
 openssl = ["reqwest/native-tls"]
 
 ethers-solc = ["dep:ethers-solc"]

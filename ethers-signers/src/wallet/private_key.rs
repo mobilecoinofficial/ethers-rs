@@ -4,8 +4,7 @@ use super::Wallet;
 use crate::wallet::mnemonic::MnemonicBuilderError;
 use coins_bip32::Bip32Error;
 use coins_bip39::MnemonicError;
-#[cfg(not(target_arch = "wasm32"))]
-use elliptic_curve::rand_core;
+use elliptic_curve::Generate;
 #[cfg(not(target_arch = "wasm32"))]
 use eth_keystore::KeystoreError;
 use ethers_core::{
@@ -62,11 +61,11 @@ impl Wallet<SigningKey> {
     ) -> Result<(Self, String), WalletError>
     where
         P: AsRef<Path>,
-        R: Rng + CryptoRng + rand_core::CryptoRng,
+        R: Rng + CryptoRng,
         S: AsRef<[u8]>,
     {
         let (secret, uuid) = eth_keystore::new(dir, rng, password, name)?;
-        let signer = SigningKey::from_bytes(secret.as_slice().into())?;
+        let signer = SigningKey::from_slice(secret.as_slice())?;
         let address = secret_key_to_address(&signer);
         Ok((Self { signer, address, chain_id: 1 }, uuid))
     }
@@ -79,7 +78,7 @@ impl Wallet<SigningKey> {
         S: AsRef<[u8]>,
     {
         let secret = eth_keystore::decrypt_key(keypath, password)?;
-        let signer = SigningKey::from_bytes(secret.as_slice().into())?;
+        let signer = SigningKey::from_slice(secret.as_slice())?;
         let address = secret_key_to_address(&signer);
         Ok(Self { signer, address, chain_id: 1 })
     }
@@ -110,14 +109,14 @@ impl Wallet<SigningKey> {
 
     /// Creates a new random keypair seeded with the provided RNG
     pub fn new<R: Rng + CryptoRng>(rng: &mut R) -> Self {
-        let signer = SigningKey::random(rng);
+        let signer = SigningKey::generate_from_rng(&mut RngCompat(rng));
         let address = secret_key_to_address(&signer);
         Self { signer, address, chain_id: 1 }
     }
 
     /// Creates a new Wallet instance from a raw scalar value (big endian).
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, WalletError> {
-        let signer = SigningKey::from_bytes(bytes.into())?;
+        let signer = SigningKey::from_slice(bytes)?;
         let address = secret_key_to_address(&signer);
         Ok(Self { signer, address, chain_id: 1 })
     }
@@ -157,10 +156,10 @@ impl FromStr for Wallet<SigningKey> {
         let src = hex::decode(src.strip_prefix("0X").unwrap_or(src))?;
 
         if src.len() != 32 {
-            return Err(WalletError::HexError(hex::FromHexError::InvalidStringLength))
+            return Err(WalletError::HexError(hex::FromHexError::InvalidStringLength));
         }
 
-        let sk = SigningKey::from_bytes(src.as_slice().into())?;
+        let sk = SigningKey::from_slice(src.as_slice())?;
         Ok(sk.into())
     }
 }
@@ -454,4 +453,29 @@ mod tests {
             .parse::<Wallet<SigningKey>>()
             .unwrap_err();
     }
+}
+
+// Keep the public rand 0.8 API while forwarding entropy to the updated crypto crates.
+pub(super) struct RngCompat<'a, R>(pub &'a mut R);
+
+impl<R: rand::RngCore> elliptic_curve::rand_core::TryRng for RngCompat<'_, R> {
+    type Error = std::convert::Infallible;
+
+    fn try_next_u32(&mut self) -> Result<u32, Self::Error> {
+        Ok(self.0.next_u32())
+    }
+
+    fn try_next_u64(&mut self) -> Result<u64, Self::Error> {
+        Ok(self.0.next_u64())
+    }
+
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Self::Error> {
+        self.0.fill_bytes(dest);
+        Ok(())
+    }
+}
+
+impl<R: rand::RngCore + rand::CryptoRng> elliptic_curve::rand_core::TryCryptoRng
+    for RngCompat<'_, R>
+{
 }

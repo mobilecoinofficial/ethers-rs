@@ -8,10 +8,10 @@ use async_trait::async_trait;
 
 use futures_channel::oneshot;
 use futures_util::{lock::Mutex, select_biased};
-use instant::Instant;
 use std::{pin::Pin, sync::Arc};
 use thiserror::Error;
 use tracing_futures::Instrument;
+use web_time::Instant;
 
 use ethers_core::types::{
     transaction::eip2718::TypedTransaction, BlockId, TransactionRequest, TxHash, U256,

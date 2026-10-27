@@ -3,9 +3,9 @@
 use ethers_core::types::{Bytes, TransactionReceipt, H256};
 use futures_timer::Delay;
 use futures_util::{stream::FuturesUnordered, StreamExt};
-use instant::{Duration, Instant};
 use pin_project::pin_project;
 use std::{future::Future, pin::Pin, task::Poll};
+use web_time::{Duration, Instant};
 
 use crate::{
     utils::PinBoxFut, JsonRpcClient, Middleware, PendingTransaction, Provider, ProviderError,
@@ -193,7 +193,7 @@ where
                         let fut = this.provider.send_raw_transaction(next_to_broadcast);
                         *this.state = BroadcastingNew(fut);
                         cx.waker().wake_by_ref();
-                        return Poll::Pending
+                        return Poll::Pending;
                     }
                 }
                 check_all_receipts!(cx, this);

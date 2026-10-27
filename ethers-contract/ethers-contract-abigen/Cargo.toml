@@ -55,7 +55,7 @@ default = ["providers"]
 providers = []
 
 online = ["reqwest", "ethers-etherscan", "url", "tokio"]
-rustls = ["reqwest?/rustls-tls", "ethers-etherscan?/rustls"]
+rustls = ["reqwest?/rustls", "ethers-etherscan?/rustls"]
 openssl = ["reqwest?/native-tls", "ethers-etherscan?/openssl"]
 
 [dev-dependencies]
